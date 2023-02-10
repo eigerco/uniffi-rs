@@ -17,6 +17,7 @@ members = [
   "examples/sprites",
   "examples/todolist",
   "examples/custom-types",
+  "examples/documentation",
 
   "fixtures/coverall",
   "fixtures/callbacks",
