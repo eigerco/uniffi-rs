@@ -51,6 +51,8 @@ use super::{convert_type, APIConverter, ComponentInterface};
 #[derive(Debug, Clone, Checksum)]
 pub struct Function {
     pub(super) name: String,
+    #[checksum_ignore]
+    pub(super) documentation: Option<uniffi_docs::Function>,
     pub(super) arguments: Vec<Argument>,
     pub(super) return_type: Option<Type>,
     // We don't include the FFIFunc in the hash calculation, because:
@@ -67,6 +69,10 @@ pub struct Function {
 impl Function {
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn documentation(&self) -> Option<&uniffi_docs::Function> {
+        self.documentation.as_ref()
     }
 
     pub fn arguments(&self) -> Vec<&Argument> {
@@ -138,6 +144,7 @@ impl From<uniffi_meta::FnMetadata> for Function {
 
         Self {
             name: meta.name,
+            documentation: None,
             arguments,
             return_type,
             ffi_func,
@@ -163,6 +170,7 @@ impl APIConverter<Function> for weedle::namespace::OperationNamespaceMember<'_> 
                 None => bail!("anonymous functions are not supported {:?}", self),
                 Some(id) => id.0.to_string(),
             },
+            documentation: None,
             return_type,
             arguments: self.args.body.list.convert(ci)?,
             ffi_func: Default::default(),

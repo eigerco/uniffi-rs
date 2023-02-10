@@ -6,6 +6,7 @@ members = [
   "uniffi_macros",
   "uniffi_meta",
   "uniffi_testing",
+  "uniffi_docs",
   "uniffi",
   "weedle2",
 
@@ -16,6 +17,7 @@ members = [
   "examples/sprites",
   "examples/todolist",
   "examples/custom-types",
+  "examples/documentation",
 
   "fixtures/coverall",
   "fixtures/callbacks",
