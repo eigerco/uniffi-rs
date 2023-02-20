@@ -2,20 +2,110 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::{collections::HashMap, fs::read_to_string};
+use std::{collections::HashMap, fs::read_to_string, str::FromStr};
 
 use anyhow::Result;
 use camino::Utf8Path;
+use pulldown_cmark::{Event, HeadingLevel::H1, Parser, Tag};
 use syn::Attribute;
 
 /// Function documentation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub description: String,
     pub arguments_descriptions: HashMap<String, String>,
     pub return_description: Option<String>,
 }
 
+impl FromStr for Function {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        // Converting comment into markdown first.
+        let md = s.replace("/// ", "").replace("///", "");
+
+        // Prepare the different buffers for the parse.
+        let mut description_buff = String::new();
+
+        let mut args_values_buff: Vec<String> = Vec::new();
+        let mut args_keys_buff: Vec<String> = Vec::new();
+
+        let mut return_description_buff = String::new();
+
+        // The current parsing stage.
+        let mut stage = ParseStage::DESCRIPTION;
+
+        // A new parser
+        let parser = Parser::new(&md);
+
+        for event in parser {
+            match event {
+                Event::Start(Tag::Heading(H1, _, _)) => match stage {
+                    ParseStage::DESCRIPTION => stage = ParseStage::ARGS,
+                    ParseStage::ARGS => stage = ParseStage::RETURN,
+                    ParseStage::RETURN => {}
+                },
+                Event::Text(s) => match stage {
+                    ParseStage::DESCRIPTION => {
+                        description_buff.push_str(&s);
+                        description_buff.push('\n');
+                    }
+                    ParseStage::ARGS => {
+                        if s.to_lowercase() == "arguments" {
+                            continue;
+                        }
+                        args_values_buff.push(s.to_string());
+                    }
+                    ParseStage::RETURN => {
+                        if s.to_lowercase() == "returns" {
+                            continue;
+                        }
+                        return_description_buff.push_str(&s);
+                        return_description_buff.push('\n');
+                    }
+                },
+                Event::Code(s) => {
+                    args_keys_buff.push(s.to_string());
+                }
+                _ => {}
+            }
+        }
+
+        let mut arguments_descriptions = HashMap::with_capacity(args_keys_buff.len());
+        args_keys_buff
+            .into_iter()
+            .zip(args_values_buff.into_iter())
+            .for_each(|(k, v)| {
+                arguments_descriptions.insert(k, v.replace("-", "").trim().to_string());
+            });
+
+        let return_description = if return_description_buff.is_empty() {
+            None
+        } else {
+            Some(return_description_buff)
+        };
+
+        if arguments_descriptions.is_empty() && return_description.is_none() {
+            return Ok(Function {
+                description: md.to_string(),
+                arguments_descriptions,
+                return_description,
+            });
+        }
+
+        Ok(Function {
+            description: description_buff,
+            arguments_descriptions,
+            return_description,
+        })
+    }
+}
+
+enum ParseStage {
+    DESCRIPTION,
+    ARGS,
+    RETURN,
+}
 /// Structure or enum documentation.
 #[derive(Debug, Clone)]
 pub struct Structure {
@@ -103,16 +193,9 @@ pub fn extract_documentation(path: &Utf8Path) -> Result<Documentation> {
                                     None
                                 }
                             })
+                            // TODO.Currently unwrap, as we do not expect errors. Just being compliant with API. Better handling.
                             .map(|(name, description)| {
-                                // todo: parse markdown to extract argument descriptions and return description
-                                (
-                                    name,
-                                    Function {
-                                        description,
-                                        arguments_descriptions: HashMap::new(),
-                                        return_description: None,
-                                    },
-                                )
+                                (name, Function::from_str(&description).unwrap())
                             })
                             .collect();
 
@@ -143,4 +226,51 @@ pub fn extract_documentation(path: &Utf8Path) -> Result<Documentation> {
         structures,
         impls,
     })
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_parses_a_md_description() {
+        let description = std::fs::read_to_string("./tests/parsable_description.txt").unwrap();
+        let result = Function::from_str(&description).unwrap();
+        assert_eq!(expected_complete_doc_function(), result);
+    }
+
+    fn expected_complete_doc_function() -> Function {
+        let mut expected_arg_descriptions = HashMap::new();
+        expected_arg_descriptions.insert(
+            "argument1".to_string(),
+            "this is argument description 1.".to_string(),
+        );
+        expected_arg_descriptions.insert(
+            "argument2".to_string(),
+            "this is argument description 2.".to_string(),
+        );
+        Function {
+            description: "This is the function description.\nHere is a second line.\n".to_string(),
+            arguments_descriptions: expected_arg_descriptions,
+            return_description: Some(
+                "This is return value description.\nHere is a second line.\n".to_string(),
+            ),
+        }
+    }
+
+    #[test]
+    fn it_parses_a_no_md_description() {
+        let description = std::fs::read_to_string("./tests/no_md_description.txt").unwrap();
+        let cleaned_description = description.replace("/// ", "").replace("///", "");
+
+        let result = Function::from_str(&description).unwrap();
+
+        assert_eq!(
+            Function {
+                description: cleaned_description,
+                arguments_descriptions: HashMap::new(),
+                return_description: None
+            },
+            result
+        );
+    }
 }
