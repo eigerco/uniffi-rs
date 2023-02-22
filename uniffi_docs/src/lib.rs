@@ -36,7 +36,7 @@ impl FromStr for Function {
                 Event::Start(Tag::Heading(H1, _, _)) => match current_stage {
                     ParseStage::DESCRIPTION => current_stage = ParseStage::ARGS,
                     ParseStage::ARGS => current_stage = ParseStage::RETURN,
-                    ParseStage::RETURN => ()
+                    ParseStage::RETURN => (),
                 },
                 Event::Text(s) => match current_stage {
                     ParseStage::DESCRIPTION => {
@@ -60,7 +60,7 @@ impl FromStr for Function {
                 Event::Code(s) => {
                     args_keys_buff.push(s.to_string());
                 }
-                _ => ()
+                _ => (),
             }
         }
 
