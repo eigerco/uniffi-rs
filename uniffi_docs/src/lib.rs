@@ -94,6 +94,8 @@ impl FromStr for Function {
     }
 }
 
+/// Used to keep track of the different 
+/// function comment parts while parsing it.
 enum ParseStage {
     DESCRIPTION,
     ARGS,
