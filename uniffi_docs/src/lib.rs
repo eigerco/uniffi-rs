@@ -21,9 +21,6 @@ impl FromStr for Function {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        // Converting comment into markdown first.
-        let md = s.replace("/// ", "").replace("///", "");
-
         // Prepare the different buffers for the parse.
         let mut description_buff = String::new();
 
@@ -36,7 +33,7 @@ impl FromStr for Function {
         let mut stage = ParseStage::DESCRIPTION;
 
         // A new parser
-        let parser = Parser::new(&md);
+        let parser = Parser::new(s);
 
         for event in parser {
             match event {
@@ -87,7 +84,7 @@ impl FromStr for Function {
 
         if arguments_descriptions.is_empty() && return_description.is_none() {
             return Ok(Function {
-                description: md.to_string(),
+                description: s.to_string(),
                 arguments_descriptions,
                 return_description,
             });
@@ -260,13 +257,12 @@ mod tests {
     #[test]
     fn it_parses_a_no_md_description() {
         let description = std::fs::read_to_string("./tests/no_md_description.txt").unwrap();
-        let cleaned_description = description.replace("/// ", "").replace("///", "");
 
         let result = Function::from_str(&description).unwrap();
 
         assert_eq!(
             Function {
-                description: cleaned_description,
+                description: description,
                 arguments_descriptions: HashMap::new(),
                 return_description: None
             },
