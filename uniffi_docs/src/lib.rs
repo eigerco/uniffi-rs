@@ -223,10 +223,25 @@ pub fn extract_documentation(path: &Utf8Path) -> Result<Documentation> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indoc::indoc;
 
     #[test]
     fn test_doc_function_parses_a_md_description() {
-        let description = std::fs::read_to_string("./tests/parsable_description.txt").unwrap();
+        let description = indoc! {"
+            This is the function description.
+            Here is a second line.
+            
+            # Arguments
+            
+            - `argument1` - this is argument description 1.
+            - `argument2` - this is argument description 2.
+            
+            # Returns
+            
+            This is return value description.
+            Here is a second line.
+        "};
+
         let result = Function::from_str(&description).unwrap();
         assert_eq!(expected_complete_doc_function(), result);
     }
@@ -252,13 +267,24 @@ mod tests {
 
     #[test]
     fn test_doc_function_parses_a_no_md_description() {
-        let description = std::fs::read_to_string("./tests/no_md_description.txt").unwrap();
+        let description = indoc! {"
+            This is the function description.
+
+            Arguments
+
+            argument1 - this is argument description 1.
+            argument2 - this is argument description 2.
+
+            Returns
+
+            This is return value description.
+        "};
 
         let result = Function::from_str(&description).unwrap();
 
         assert_eq!(
             Function {
-                description: description,
+                description: description.to_string(),
                 arguments_descriptions: HashMap::new(),
                 return_description: None
             },
