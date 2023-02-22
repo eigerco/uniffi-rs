@@ -27,29 +27,29 @@ impl FromStr for Function {
 
         let mut return_description_buff = String::new();
 
-        let mut current_stage = ParseStage::DESCRIPTION;
+        let mut current_stage = ParseStage::Description;
 
         let parser = Parser::new(s);
 
         for event in parser {
             match event {
                 Event::Start(Tag::Heading(H1, _, _)) => match current_stage {
-                    ParseStage::DESCRIPTION => current_stage = ParseStage::ARGS,
-                    ParseStage::ARGS => current_stage = ParseStage::RETURN,
-                    ParseStage::RETURN => (),
+                    ParseStage::Description => current_stage = ParseStage::Arguments,
+                    ParseStage::Arguments => current_stage = ParseStage::ReturnDescription,
+                    ParseStage::ReturnDescription => (),
                 },
                 Event::Text(s) => match current_stage {
-                    ParseStage::DESCRIPTION => {
+                    ParseStage::Description => {
                         description_buff.push_str(&s);
                         description_buff.push('\n');
                     }
-                    ParseStage::ARGS => {
+                    ParseStage::Arguments => {
                         if s.to_lowercase() == "arguments" {
                             continue;
                         }
                         args_values_buff.push(s.to_string());
                     }
-                    ParseStage::RETURN => {
+                    ParseStage::ReturnDescription => {
                         if s.to_lowercase() == "returns" {
                             continue;
                         }
@@ -69,7 +69,7 @@ impl FromStr for Function {
             .into_iter()
             .zip(args_values_buff.into_iter())
             .for_each(|(k, v)| {
-                arguments_descriptions.insert(k, v.replace("-", "").trim().to_string());
+                arguments_descriptions.insert(k, v.replace('-', "").trim().to_string());
             });
 
         let return_description = if return_description_buff.is_empty() {
@@ -97,9 +97,9 @@ impl FromStr for Function {
 /// Used to keep track of the different 
 /// function comment parts while parsing it.
 enum ParseStage {
-    DESCRIPTION,
-    ARGS,
-    RETURN,
+    Description,
+    Arguments,
+    ReturnDescription,
 }
 
 /// Structure or enum documentation.
