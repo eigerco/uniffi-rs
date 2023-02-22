@@ -21,28 +21,24 @@ impl FromStr for Function {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        // Prepare the different buffers for the parse.
         let mut description_buff = String::new();
-
         let mut args_values_buff: Vec<String> = Vec::new();
         let mut args_keys_buff: Vec<String> = Vec::new();
 
         let mut return_description_buff = String::new();
 
-        // The current parsing stage.
-        let mut stage = ParseStage::DESCRIPTION;
+        let mut current_stage = ParseStage::DESCRIPTION;
 
-        // A new parser
         let parser = Parser::new(s);
 
         for event in parser {
             match event {
-                Event::Start(Tag::Heading(H1, _, _)) => match stage {
-                    ParseStage::DESCRIPTION => stage = ParseStage::ARGS,
-                    ParseStage::ARGS => stage = ParseStage::RETURN,
-                    ParseStage::RETURN => {}
+                Event::Start(Tag::Heading(H1, _, _)) => match current_stage {
+                    ParseStage::DESCRIPTION => current_stage = ParseStage::ARGS,
+                    ParseStage::ARGS => current_stage = ParseStage::RETURN,
+                    ParseStage::RETURN => ()
                 },
-                Event::Text(s) => match stage {
+                Event::Text(s) => match current_stage {
                     ParseStage::DESCRIPTION => {
                         description_buff.push_str(&s);
                         description_buff.push('\n');
@@ -64,7 +60,7 @@ impl FromStr for Function {
                 Event::Code(s) => {
                     args_keys_buff.push(s.to_string());
                 }
-                _ => {}
+                _ => ()
             }
         }
 
@@ -103,6 +99,7 @@ enum ParseStage {
     ARGS,
     RETURN,
 }
+
 /// Structure or enum documentation.
 #[derive(Debug, Clone)]
 pub struct Structure {
@@ -190,7 +187,6 @@ pub fn extract_documentation(path: &Utf8Path) -> Result<Documentation> {
                                     None
                                 }
                             })
-                            // TODO.Currently unwrap, as we do not expect errors. Just being compliant with API. Better handling.
                             .map(|(name, description)| {
                                 (name, Function::from_str(&description).unwrap())
                             })
