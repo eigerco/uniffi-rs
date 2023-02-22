@@ -225,7 +225,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_parses_a_md_description() {
+    fn test_doc_function_parses_a_md_description() {
         let description = std::fs::read_to_string("./tests/parsable_description.txt").unwrap();
         let result = Function::from_str(&description).unwrap();
         assert_eq!(expected_complete_doc_function(), result);
@@ -251,7 +251,7 @@ mod tests {
     }
 
     #[test]
-    fn it_parses_a_no_md_description() {
+    fn test_doc_function_parses_a_no_md_description() {
         let description = std::fs::read_to_string("./tests/no_md_description.txt").unwrap();
 
         let result = Function::from_str(&description).unwrap();
