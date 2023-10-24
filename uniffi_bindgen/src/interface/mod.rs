@@ -129,7 +129,16 @@ impl ComponentInterface {
     }
 
     /// Add a metadata group to a `ComponentInterface`.
-    pub fn add_metadata(&mut self, group: uniffi_meta::MetadataGroup) -> Result<()> {
+    pub fn add_metadata(&mut self, mut group: uniffi_meta::MetadataGroup) -> Result<()> {
+        // Update namespace documentation if input is some, otherwise update
+        // the input documentation so that `NamespaceMetadata` structs are equal
+        // for the equality comparison below in this function.
+        if group.namespace.documentation.is_some() {
+            self.types.namespace.documentation = group.namespace.documentation.clone();
+        } else {
+            group.namespace.documentation = self.types.namespace.documentation.clone();
+        }
+
         if self.types.namespace.name.is_empty() {
             self.types.namespace = group.namespace.clone();
         } else if self.types.namespace != group.namespace {
@@ -143,6 +152,11 @@ impl ComponentInterface {
         self.types.add_known_type(&uniffi_meta::Type::String)?;
         crate::macro_metadata::add_group_to_ci(self, group)?;
         Ok(())
+    }
+
+    ///
+    pub fn namespace_definition(&self) -> &NamespaceMetadata {
+        &self.types.namespace
     }
 
     /// The string namespace within which this API should be presented to the caller.
@@ -939,7 +953,7 @@ impl ComponentInterface {
             if let Some(doc) = documentation.structures.remove(object.name()) {
                 let mut methods = doc.methods.clone();
 
-                object.documentation = Some(doc);
+                object.documentation = Some(doc.description);
 
                 for constructor in &mut object.constructors {
                     if let Some(function) = methods.remove(constructor.name()) {
@@ -959,7 +973,7 @@ impl ComponentInterface {
             if let Some(doc) = documentation.structures.remove(record.name()) {
                 let mut members = doc.members.clone();
 
-                record.documentation = Some(doc);
+                record.documentation = Some(doc.description);
 
                 for field in &mut record.fields {
                     if let Some(member) = members.remove(field.name()) {
@@ -973,7 +987,7 @@ impl ComponentInterface {
             if let Some(doc) = documentation.structures.remove(enum_.name()) {
                 let mut members = doc.members.clone();
 
-                enum_.documentation = Some(doc);
+                enum_.documentation = Some(doc.description);
 
                 for variant in &mut enum_.variants {
                     if let Some(member) = members.remove(variant.name()) {
@@ -1154,7 +1168,8 @@ mod test {
         let err = ComponentInterface::from_webidl(UDL2, "crate_name").unwrap_err();
         assert_eq!(
             err.to_string(),
-            "Mismatching definition for enum `Testing`!\nexisting definition: Enum {
+            "Mismatching definition for enum `Testing`!
+existing definition: Enum {
     name: \"Testing\",
     module_path: \"crate_name\",
     documentation: None,
@@ -1301,5 +1316,32 @@ new definition: Enum {
             module_path: "".into(),
             imp: ObjectImpl::Struct,
         }));
+    }
+
+    #[test]
+    fn test_docstring_namespace() {
+        const UDL: &str = r#"
+            /// informative docstring
+            namespace test{};
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.namespace_definition().documentation().unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_multiline_docstring() {
+        const UDL: &str = r#"
+            /// informative
+            /// docstring
+            namespace test{};
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.namespace_definition().documentation().unwrap(),
+            "informative\ndocstring"
+        );
     }
 }

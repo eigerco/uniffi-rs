@@ -1,3 +1,4 @@
+{%- call swift::docstring_value(protocol_docstring, 0) %}
 public protocol {{ protocol_name }} : AnyObject {
     {% for meth in methods.iter() -%}
     {%- let func = meth -%}

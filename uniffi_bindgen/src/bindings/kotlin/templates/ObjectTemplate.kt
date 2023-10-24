@@ -2,9 +2,11 @@
 {%- if self.include_once_check("ObjectRuntime.kt") %}{% include "ObjectRuntime.kt" %}{% endif %}
 {%- let (interface_name, impl_class_name) = obj|object_names %}
 {%- let methods = obj.methods() %}
+{%- let interface_docstring = obj.documentation() %}
 
 {% include "Interface.kt" %}
 
+{%- call kt::docstring(obj, 0) %}
 class {{ impl_class_name }}(
     pointer: Pointer
 ) : FFIObject(pointer), {{ interface_name }}{
@@ -33,6 +35,8 @@ class {{ impl_class_name }}(
     }
 
     {% for meth in obj.methods() -%}
+    {%- let func = meth %}
+    {%- include "FunctionDocsTemplate.kt" %}
     {%- match meth.throws_type() -%}
     {%- when Some with (throwable) %}
     @Throws({{ throwable|error_type_name }}::class)

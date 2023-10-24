@@ -1,3 +1,4 @@
+{%- call kt::docstring_value(interface_docstring, 0) %}
 public interface {{ interface_name }} {
     {% for meth in methods.iter() -%}
     {%- let func = meth -%}

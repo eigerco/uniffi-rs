@@ -1,10 +1,12 @@
 {%- let obj = ci|get_object_definition(name) %}
 {%- let (protocol_name, impl_name) = obj|object_names %}
 {%- let methods = obj.methods() %}
+{%- let protocol_docstring = obj.documentation() %}
 
 {% include "Protocol.py" %}
 
 class {{ impl_name }}:
+    {%- call py::docstring(obj, 4) %}
     _pointer: ctypes.c_void_p
 
 {%- match obj.primary_constructor() %}

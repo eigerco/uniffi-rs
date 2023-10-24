@@ -1,4 +1,4 @@
-{% include "ObjectDocsTemplate.rb" -%}
+{%- call rb::docstring(obj, 0) %}
 class {{ obj.name()|class_name_rb }}
 
   # A private helper for initializing instances of the class from a raw pointer,

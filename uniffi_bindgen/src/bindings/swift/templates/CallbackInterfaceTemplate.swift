@@ -4,6 +4,7 @@
 {%- let methods = cbi.methods() %}
 {%- let protocol_name = type_name.clone() %}
 {%- let ffi_init_callback = cbi.ffi_init_callback() %}
+{%- let protocol_docstring = cbi.documentation() %}
 
 {% include "Protocol.swift" %}
 {% include "CallbackInterfaceImpl.swift" %}

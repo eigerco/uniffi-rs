@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use super::APIConverter;
+use crate::converters::convert_docstring;
 use crate::InterfaceCollector;
 use anyhow::{bail, Result};
 
@@ -23,11 +24,13 @@ impl APIConverter<EnumMetadata> for weedle::EnumDefinition<'_> {
                 .iter()
                 .map::<Result<_>, _>(|v| {
                     Ok(VariantMetadata {
-                        name: v.0.to_string(),
+                        name: v.value.0.to_string(),
                         fields: vec![],
+                        docstring: v.docstring.as_ref().map(|v| convert_docstring(&v.0)),
                     })
                 })
                 .collect::<Result<Vec<_>>>()?,
+            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }
@@ -45,11 +48,13 @@ impl APIConverter<ErrorMetadata> for weedle::EnumDefinition<'_> {
                     .iter()
                     .map::<Result<_>, _>(|v| {
                         Ok(VariantMetadata {
-                            name: v.0.to_string(),
+                            name: v.value.0.to_string(),
                             fields: vec![],
+                            docstring: v.docstring.as_ref().map(|v| v.0.clone()),
                         })
                     })
                     .collect::<Result<Vec<_>>>()?,
+                docstring: self.docstring.as_ref().map(|v| v.0.clone()),
             },
             is_flat: true,
         })
@@ -78,6 +83,7 @@ impl APIConverter<EnumMetadata> for weedle::InterfaceDefinition<'_> {
                     ),
                 })
                 .collect::<Result<Vec<_>>>()?,
+            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
             // Enums declared using the `[Enum] interface` syntax might have variants with fields.
             //flat: false,
         })
@@ -107,6 +113,7 @@ impl APIConverter<ErrorMetadata> for weedle::InterfaceDefinition<'_> {
                         ),
                     })
                     .collect::<Result<Vec<_>>>()?,
+                docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
             },
             is_flat: false,
         })

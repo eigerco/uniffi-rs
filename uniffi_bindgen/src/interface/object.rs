@@ -57,7 +57,7 @@
 //! # Ok::<(), anyhow::Error>(())
 //! ```
 
-use std::iter;
+use std::{iter, str::FromStr};
 
 use anyhow::Result;
 use uniffi_meta::Checksum;
@@ -87,7 +87,7 @@ pub struct Object {
     pub(super) imp: ObjectImpl,
     pub(super) module_path: String,
     #[checksum_ignore]
-    pub(super) documentation: Option<uniffi_docs::Structure>,
+    pub(super) documentation: Option<String>,
     pub(super) constructors: Vec<Constructor>,
     pub(super) methods: Vec<Method>,
     // The "trait" methods - they have a (presumably "well known") name, and
@@ -123,8 +123,8 @@ impl Object {
         &self.imp
     }
 
-    pub fn documentation(&self) -> Option<&uniffi_docs::Structure> {
-        self.documentation.as_ref()
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
     }
 
     pub fn is_trait_interface(&self) -> bool {
@@ -247,7 +247,7 @@ impl From<uniffi_meta::ObjectMetadata> for Object {
             module_path: meta.module_path,
             name: meta.name,
             imp: meta.imp,
-            documentation: None,
+            documentation: meta.docstring.clone(),
             constructors: Default::default(),
             methods: Default::default(),
             uniffi_traits: Default::default(),
@@ -376,7 +376,10 @@ impl From<uniffi_meta::ConstructorMetadata> for Constructor {
             name: meta.name,
             object_name: meta.self_name,
             object_module_path: meta.module_path,
-            documentation: None,
+            documentation: meta
+                .docstring
+                .as_ref()
+                .map(|v| uniffi_docs::Function::from_str(v).unwrap()),
             arguments,
             ffi_func,
             throws: meta.throws.map(Into::into),
@@ -522,7 +525,10 @@ impl From<uniffi_meta::MethodMetadata> for Method {
 
         Self {
             name: meta.name,
-            documentation: None,
+            documentation: meta
+                .docstring
+                .as_ref()
+                .map(|v| uniffi_docs::Function::from_str(v).unwrap()),
             object_name: meta.self_name,
             object_module_path: meta.module_path,
             is_async,
@@ -553,7 +559,10 @@ impl From<uniffi_meta::TraitMethodMetadata> for Method {
             object_name: meta.trait_name,
             object_module_path: meta.module_path,
             is_async: false,
-            documentation: None,
+            documentation: meta
+                .docstring
+                .as_ref()
+                .map(|v| uniffi_docs::Function::from_str(v).unwrap()),
             arguments,
             return_type,
             throws: meta.throws.map(Into::into),
@@ -808,6 +817,66 @@ mod test {
         assert_eq!(
             err.to_string(),
             "Trait interfaces can not have constructors: \"new\""
+        );
+    }
+
+    #[test]
+    fn test_docstring_object() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            interface Testing { };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_object_definition("Testing")
+                .unwrap()
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_constructor() {
+        const UDL: &str = r#"
+            namespace test{};
+            interface Testing {
+                /// informative docstring
+                constructor();
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_object_definition("Testing")
+                .unwrap()
+                .primary_constructor()
+                .unwrap()
+                .documentation()
+                .unwrap()
+                .description,
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_method() {
+        const UDL: &str = r#"
+            namespace test{};
+            interface Testing {
+                /// informative docstring
+                void testing();
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_object_definition("Testing")
+                .unwrap()
+                .get_method("testing")
+                .documentation()
+                .unwrap()
+                .description,
+            "informative docstring"
         );
     }
 }

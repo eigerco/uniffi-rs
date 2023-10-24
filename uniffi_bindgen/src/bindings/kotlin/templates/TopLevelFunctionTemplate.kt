@@ -1,3 +1,4 @@
+{% include "FunctionDocsTemplate.kt" %}
 {%- if func.is_async() %}
 {%- match func.throws_type() -%}
 {%- when Some with (throwable) %}
@@ -36,7 +37,6 @@ suspend fun {{ func.name()|fn_name }}({%- call kt::arg_list_decl(func) -%}){% ma
 {%- else -%}
 {%- endmatch -%}
 
-{% include "FunctionDocsTemplate.kt" %}
 {%- match func.return_type() -%}
 {%- when Some with (return_type) %}
 

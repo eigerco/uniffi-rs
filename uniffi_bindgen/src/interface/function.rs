@@ -36,6 +36,7 @@ use anyhow::Result;
 
 use super::ffi::{FfiArgument, FfiFunction, FfiType};
 use super::{AsType, ComponentInterface, Literal, ObjectImpl, Type, TypeIterator};
+use std::str::FromStr;
 use uniffi_meta::Checksum;
 
 /// Represents a standalone function.
@@ -166,7 +167,10 @@ impl From<uniffi_meta::FnMetadata> for Function {
             name: meta.name,
             module_path: meta.module_path,
             is_async,
-            documentation: None,
+            documentation: meta
+                .docstring
+                .as_ref()
+                .map(|v| uniffi_docs::Function::from_str(v).unwrap()),
             arguments,
             return_type,
             ffi_func,
@@ -374,5 +378,24 @@ mod test {
             matches!(func2.arguments()[1].as_type(), Type::Record { name, .. } if name == "TestDict")
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_docstring_function() {
+        const UDL: &str = r#"
+            namespace test {
+                /// informative docstring
+                void testing();
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_function_definition("testing")
+                .unwrap()
+                .documentation()
+                .unwrap()
+                .description,
+            "informative docstring"
+        );
     }
 }

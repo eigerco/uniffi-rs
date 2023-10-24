@@ -4,6 +4,7 @@
 
 use super::APIConverter;
 use crate::attributes::InterfaceAttributes;
+use crate::converters::convert_docstring;
 use crate::InterfaceCollector;
 use anyhow::{bail, Result};
 use std::collections::HashSet;
@@ -70,6 +71,7 @@ impl APIConverter<ObjectMetadata> for weedle::InterfaceDefinition<'_> {
                 throws: None,
                 takes_self_by_arc: false,
                 checksum: None,
+                docstring: None,
             })
         };
         // Trait methods are in the Metadata.
@@ -130,6 +132,7 @@ impl APIConverter<ObjectMetadata> for weedle::InterfaceDefinition<'_> {
             module_path: ci.module_path(),
             name: object_name.to_string(),
             imp: object_impl,
+            docstring: self.docstring.as_ref().map(|v| convert_docstring(&v.0)),
         })
     }
 }

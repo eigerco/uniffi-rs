@@ -60,7 +60,7 @@ pub struct Record {
     pub(super) name: String,
     pub(super) module_path: String,
     #[checksum_ignore]
-    pub(super) documentation: Option<uniffi_docs::Structure>,
+    pub(super) documentation: Option<String>,
     pub(super) fields: Vec<Field>,
 }
 
@@ -77,8 +77,8 @@ impl Record {
         Box::new(self.fields.iter().flat_map(Field::iter_types))
     }
 
-    pub fn documentation(&self) -> Option<&uniffi_docs::Structure> {
-        self.documentation.as_ref()
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
     }
 
     pub fn has_fields_documentation(&self) -> bool {
@@ -103,7 +103,7 @@ impl TryFrom<uniffi_meta::RecordMetadata> for Record {
     fn try_from(meta: uniffi_meta::RecordMetadata) -> Result<Self> {
         Ok(Self {
             name: meta.name,
-            documentation: None,
+            documentation: meta.docstring.clone(),
             module_path: meta.module_path,
             fields: meta
                 .fields
@@ -129,8 +129,8 @@ impl Field {
         &self.name
     }
 
-    pub fn documentation(&self) -> Option<&String> {
-        self.documentation.as_ref()
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
     }
 
     pub fn type_(&self) -> &Type {
@@ -161,7 +161,7 @@ impl TryFrom<uniffi_meta::FieldMetadata> for Field {
         let default = meta.default;
         Ok(Self {
             name,
-            documentation: None,
+            documentation: meta.docstring,
             type_,
             default,
         })
@@ -250,5 +250,40 @@ mod test {
         assert!(ci
             .iter_types()
             .any(|t| matches!(t, Type::Record { name, .. } if name == "Testing")));
+    }
+
+    #[test]
+    fn test_docstring_record() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            dictionary Testing { };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_record_definition("Testing")
+                .unwrap()
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_record_field() {
+        const UDL: &str = r#"
+            namespace test{};
+            dictionary Testing {
+                /// informative docstring
+                i32 testing;
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_record_definition("Testing").unwrap().fields()[0]
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
     }
 }

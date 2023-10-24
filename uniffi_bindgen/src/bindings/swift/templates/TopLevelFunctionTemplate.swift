@@ -1,5 +1,6 @@
 {%- if func.is_async() %}
 
+{% include "TopLevelFunctionDocsTemplate.swift" %}
 public func {{ func.name()|fn_name }}({%- call swift::arg_list_decl(func) -%}) async {% call swift::throws(func) %}{% match func.return_type() %}{% when Some with (return_type) %} -> {{ return_type|type_name }}{% when None %}{% endmatch %} {
     return {% call swift::try(func) %} await uniffiRustCallAsync(
         rustFutureFunc: {

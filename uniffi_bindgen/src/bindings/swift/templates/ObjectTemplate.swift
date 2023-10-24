@@ -1,9 +1,11 @@
 {%- let obj = ci|get_object_definition(name) %}
 {%- let (protocol_name, impl_class_name) = obj|object_names %}
 {%- let methods = obj.methods() %}
+{%- let protocol_docstring = obj.documentation() %}
 
 {% include "Protocol.swift" %}
 
+{%- call swift::docstring(obj, 0) %}
 public class {{ impl_class_name }}: {{ protocol_name }} {
     fileprivate let pointer: UnsafeMutableRawPointer
 
@@ -40,7 +42,8 @@ public class {{ impl_class_name }}: {{ protocol_name }} {
     {# // TODO: Maybe merge the two templates (i.e the one with a return type and the one without) #}
     {% for meth in obj.methods() -%}
     {%- if meth.is_async() %}
-
+    {%- let func = meth %}
+    {%- include "FunctionDocsTemplate.swift" %}
     public func {{ meth.name()|fn_name }}({%- call swift::arg_list_decl(meth) -%}) async {% call swift::throws(meth) %}{% match meth.return_type() %}{% when Some with (return_type) %} -> {{ return_type|type_name }}{% when None %}{% endmatch %} {
         return {% call swift::try(meth) %} await uniffiRustCallAsync(
             rustFutureFunc: {
@@ -75,7 +78,8 @@ public class {{ impl_class_name }}: {{ protocol_name }} {
     {%- match meth.return_type() -%}
 
     {%- when Some with (return_type) %}
-
+    {%- let func = meth %}
+    {%- include "FunctionDocsTemplate.swift" %}
     public func {{ meth.name()|fn_name }}({% call swift::arg_list_decl(meth) %}) {% call swift::throws(meth) %} -> {{ return_type|type_name }} {
         return {% call swift::try(meth) %} {{ return_type|lift_fn }}(
             {% call swift::to_ffi_call_with_prefix("self.pointer", meth) %}
@@ -83,7 +87,8 @@ public class {{ impl_class_name }}: {{ protocol_name }} {
     }
 
     {%- when None %}
-
+    {%- let func = meth %}
+    {%- include "FunctionDocsTemplate.swift" %}
     public func {{ meth.name()|fn_name }}({% call swift::arg_list_decl(meth) %}) {% call swift::throws(meth) %} {
         {% call swift::to_ffi_call_with_prefix("self.pointer", meth) %}
     }

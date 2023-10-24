@@ -171,7 +171,7 @@ pub struct Enum {
     pub(super) name: String,
     pub(super) module_path: String,
     #[checksum_ignore]
-    pub(super) documentation: Option<uniffi_docs::Structure>,
+    pub(super) documentation: Option<String>,
     pub(super) variants: Vec<Variant>,
     // NOTE: `flat` is a misleading name and to make matters worse, has 2 different
     // meanings depending on the context :(
@@ -198,8 +198,8 @@ impl Enum {
         &self.name
     }
 
-    pub fn documentation(&self) -> Option<&uniffi_docs::Structure> {
-        self.documentation.as_ref()
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
     }
 
     pub fn variants(&self) -> &[Variant] {
@@ -224,7 +224,7 @@ impl Enum {
         Ok(Self {
             name: meta.name,
             module_path: meta.module_path,
-            documentation: None,
+            documentation: meta.docstring.clone(),
             variants: meta
                 .variants
                 .into_iter()
@@ -260,8 +260,8 @@ impl Variant {
         &self.name
     }
 
-    pub fn documentation(&self) -> Option<&String> {
-        self.documentation.as_ref()
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
     }
 
     pub fn fields(&self) -> &[Field] {
@@ -283,7 +283,7 @@ impl TryFrom<uniffi_meta::VariantMetadata> for Variant {
     fn try_from(meta: uniffi_meta::VariantMetadata) -> Result<Self> {
         Ok(Self {
             name: meta.name,
-            documentation: None,
+            documentation: meta.docstring.clone(),
             fields: meta
                 .fields
                 .into_iter()
@@ -576,6 +576,78 @@ mod test {
                 .map(|v| v.name())
                 .collect::<Vec<_>>(),
             vec!["Normal", "Error"]
+        );
+    }
+
+    #[test]
+    fn test_docstring_enum() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            enum Testing { "foo" };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing")
+                .unwrap()
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_enum_variant() {
+        const UDL: &str = r#"
+            namespace test{};
+            enum Testing {
+                /// informative docstring
+                "foo"
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing").unwrap().variants()[0]
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_associated_enum() {
+        const UDL: &str = r#"
+            namespace test{};
+            /// informative docstring
+            [Enum]
+            interface Testing { };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing")
+                .unwrap()
+                .documentation()
+                .unwrap(),
+            "informative docstring"
+        );
+    }
+
+    #[test]
+    fn test_docstring_associated_enum_variant() {
+        const UDL: &str = r#"
+            namespace test{};
+            [Enum]
+            interface Testing {
+                /// informative docstring
+                testing();
+            };
+        "#;
+        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        assert_eq!(
+            ci.get_enum_definition("Testing").unwrap().variants()[0]
+                .documentation()
+                .unwrap(),
+            "informative docstring"
         );
     }
 }

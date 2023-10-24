@@ -2,10 +2,10 @@
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 {%- let e = ci.get_enum_definition(name).unwrap() %}
-{% let struct = e %}{% include "StructureDocsTemplate.swift" %}
+{%- call swift::docstring(e, 0) %}
 public enum {{ type_name }} {
     {% for variant in e.variants() %}
-    {% include "EnumVariantDocsTemplate.swift" %}
+    {%- call swift::docstring(variant, 4) %}
     case {{ variant.name()|enum_variant_swift_quoted }}{% if variant.fields().len() > 0 %}({% call swift::field_list_decl(variant) %}){% endif -%}
     {% endfor %}
 }

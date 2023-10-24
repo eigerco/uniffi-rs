@@ -133,6 +133,13 @@ impl Checksum for &str {
 pub struct NamespaceMetadata {
     pub crate_name: String,
     pub name: String,
+    pub documentation: Option<String>,
+}
+
+impl NamespaceMetadata {
+    pub fn documentation(&self) -> Option<&str> {
+        self.documentation.as_deref()
+    }
 }
 
 // UDL file included with `include_scaffolding!()`
@@ -156,6 +163,7 @@ pub struct FnMetadata {
     pub return_type: Option<Type>,
     pub throws: Option<Type>,
     pub checksum: Option<u16>,
+    pub docstring: Option<String>,
 }
 
 impl FnMetadata {
@@ -176,6 +184,7 @@ pub struct ConstructorMetadata {
     pub inputs: Vec<FnParamMetadata>,
     pub throws: Option<Type>,
     pub checksum: Option<u16>,
+    pub docstring: Option<String>,
 }
 
 impl ConstructorMetadata {
@@ -203,6 +212,7 @@ pub struct MethodMetadata {
     pub throws: Option<Type>,
     pub takes_self_by_arc: bool, // unused except by rust udl bindgen.
     pub checksum: Option<u16>,
+    pub docstring: Option<String>,
 }
 
 impl MethodMetadata {
@@ -229,6 +239,7 @@ pub struct TraitMethodMetadata {
     pub throws: Option<Type>,
     pub takes_self_by_arc: bool, // unused except by rust udl bindgen.
     pub checksum: Option<u16>,
+    pub docstring: Option<String>,
 }
 
 impl TraitMethodMetadata {
@@ -296,6 +307,7 @@ pub struct RecordMetadata {
     pub module_path: String,
     pub name: String,
     pub fields: Vec<FieldMetadata>,
+    pub docstring: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -303,6 +315,7 @@ pub struct FieldMetadata {
     pub name: String,
     pub ty: Type,
     pub default: Option<LiteralMetadata>,
+    pub docstring: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -310,12 +323,14 @@ pub struct EnumMetadata {
     pub module_path: String,
     pub name: String,
     pub variants: Vec<VariantMetadata>,
+    pub docstring: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VariantMetadata {
     pub name: String,
     pub fields: Vec<FieldMetadata>,
+    pub docstring: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -323,12 +338,14 @@ pub struct ObjectMetadata {
     pub module_path: String,
     pub name: String,
     pub imp: types::ObjectImpl,
+    pub docstring: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CallbackInterfaceMetadata {
     pub module_path: String,
     pub name: String,
+    pub docstring: Option<String>,
 }
 
 impl ObjectMetadata {

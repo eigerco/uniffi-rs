@@ -22,13 +22,17 @@ CALL_PANIC = 2
 {%- for e in ci.enum_definitions() %}
 {% if ci.is_name_used_as_error(e.name()) %}
 {% if e.is_flat() %}
+{%- call rb::docstring(e, 0) %}
 class {{ e.name()|class_name_rb }}
     {%- for variant in e.variants() %}
+    {%- call rb::docstring(variant, 4) %}
     {{ variant.name()|class_name_rb }} = Class.new StandardError
     {%- endfor %}
 {% else %}
+{%- call rb::docstring(e, 0) %}
 module {{ e.name()|class_name_rb }}
   {%- for variant in e.variants() %}
+  {%- call rb::docstring(variant, 4) %}
   class {{ variant.name()|class_name_rb }} < StandardError
     def initialize({% for field in variant.fields() %}{{ field.name()|var_name_rb }}{% if !loop.last %}, {% endif %}{% endfor %})
         {%- for field in variant.fields() %}

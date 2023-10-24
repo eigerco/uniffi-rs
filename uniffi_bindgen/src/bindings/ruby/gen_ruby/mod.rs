@@ -356,6 +356,15 @@ mod filters {
             Type::ForeignExecutor => unimplemented!("Foreign executors are not implemented"),
         })
     }
+
+    /// Get the idiomatic Ruby rendering of docstring
+    pub fn docstring(docstring: &str, spaces: &i32) -> Result<String, askama::Error> {
+        let middle = textwrap::indent(&textwrap::dedent(docstring), "# ");
+        let wrapped = format!("##\n{middle}\n#");
+
+        let spaces = usize::try_from(*spaces).unwrap_or_default();
+        Ok(textwrap::indent(&wrapped, &" ".repeat(spaces)))
+    }
 }
 
 #[cfg(test)]

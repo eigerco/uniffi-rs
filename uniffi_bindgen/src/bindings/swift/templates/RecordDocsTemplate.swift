@@ -1,7 +1,7 @@
 {% match struct.documentation() -%}
   {% when Some with (docs) %}
 /**
-{% for line in docs.description.lines() %} * {{ line }} 
+{% for line in docs.lines() %} * {{ line }}
 {% endfor %}
 {%- if struct.has_fields_documentation() %} *
  * - Parameters:

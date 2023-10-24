@@ -1,16 +1,16 @@
 {% if e.is_flat() %}
 
-{% include "EnumDocsTemplate.rb" -%}
+{%- call rb::docstring(e, 0) %}
 class {{ e.name()|class_name_rb }}
   {% for variant in e.variants() -%}
-  {% include "EnumVariantDocsTemplate.rb" -%}
+  {%- call rb::docstring(variant, 4) %}
   {{ variant.name()|enum_name_rb }} = {{ loop.index }}
   {% endfor %}
 end
 
 {% else %}
 
-{% include "EnumDocsTemplate.rb" -%}
+{%- call rb::docstring(e, 0) %}
 class {{ e.name()|class_name_rb }}
   def initialize
     raise RuntimeError, '{{ e.name()|class_name_rb }} cannot be instantiated directly'
@@ -18,6 +18,7 @@ class {{ e.name()|class_name_rb }}
 
   # Each enum variant is a nested class of the enum itself.
   {% for variant in e.variants() -%}
+  {%- call rb::docstring(variant, 4) %}
   class {{ variant.name()|enum_name_rb }}
     {% if variant.has_fields() %}
     attr_reader {% for field in variant.fields() %}:{{ field.name()|var_name_rb }}{% if loop.last %}{% else %}, {% endif %}{%- endfor %}

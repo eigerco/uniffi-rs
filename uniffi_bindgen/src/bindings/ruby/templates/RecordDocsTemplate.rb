@@ -1,7 +1,7 @@
 {% match rec.documentation() -%}
   {% when Some with (docs) -%}
 #
-{% for line in docs.description.lines() %}# {{ line }}
+{% for line in docs.lines() %}# {{ line }}
 {% endfor %}
   {%- when None -%}
 {%- endmatch %}

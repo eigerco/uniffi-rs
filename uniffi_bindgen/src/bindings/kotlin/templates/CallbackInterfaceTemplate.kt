@@ -4,6 +4,7 @@
 {%- let ffi_init_callback = cbi.ffi_init_callback() %}
 {%- let interface_name = cbi|type_name %}
 {%- let methods = cbi.methods() %}
+{%- let interface_docstring = cbi.documentation() %}
 
 {% include "Interface.kt" %}
 {% include "CallbackInterfaceImpl.kt" %}
