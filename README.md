@@ -1,3 +1,9 @@
+## UPDATE December 2023
+
+This fork was created as a part of an effort to support cross-compliant documentation for the UniFFI languages, a feature which was financed as part of a larger [grant](https://forum.zcashcommunity.com/t/zcash-uniffi-library-rfp/43468) of the Zcash Foundation. [Despite our hard work on this](https://github.com/mozilla/uniffi-rs/pull/1498) and requests for merging the work, another approach, parallel to this, was merged, making this fork obsolete - and the documentation was then included [as part of the UDL file](https://mozilla.github.io/uniffi-rs/udl/docstrings.html). Since it is definitive that this work will not be merged, we decided to archive the repository in order to reduce the amount of future maintenance needed to keep updated [the main product](https://github.com/eigerco/uniffi-zcash-lib) of the grant, which would otherwise need constant upstream merge. The main repository depends now on the official UniFFI cargo release. We are glad to have had this opportunity to improve the open source ecosystem.
+
+---
+
 # UniFFI - a multi-language bindings generator for Rust
 
 UniFFI is a toolkit for building cross-platform software components in Rust.
